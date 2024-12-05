@@ -7,6 +7,7 @@ Redux Toolkit for API calls
 Ant-Design for UI design
 ChartJs for graphs
 React-route for routes
+Update
 
 
 Landing Page with side bar leading to diffrent pages using routes
