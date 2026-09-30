@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import HTMLReactParser from 'html-react-parser';
 import { useParams } from 'react-router-dom';
 import millify from 'millify';
-import { Col, Row, Typography, Select } from 'antd';
-import { MoneyCollectOutlined, DollarCircleOutlined, FundOutlined, ExclamationCircleOutlined, StopOutlined, TrophyOutlined, CheckOutlined, NumberOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { Col, Typography, Select, Button } from 'antd';
+import { MoneyCollectOutlined, DollarCircleOutlined, FundOutlined, ExclamationCircleOutlined, StopOutlined, TrophyOutlined, CheckOutlined, NumberOutlined, ThunderboltOutlined, LinkOutlined } from '@ant-design/icons';
 
 import { useGetCryptoDetailsQuery, useGetCryptoHistoryQuery } from '../services/cryptoApi';
 import Loader from './Loader';
@@ -15,8 +15,8 @@ const { Option } = Select;
 const CryptoDetails = () => {
   const { coinId } = useParams();
   const [timeperiod, setTimeperiod] = useState('7d');
+  const [showAllLinks, setShowAllLinks] = useState(false);
   const { data, isFetching } = useGetCryptoDetailsQuery(coinId);
-  debugger
   const { data: coinHistory } = useGetCryptoHistoryQuery({ coinId, timeperiod });
   const cryptoDetails = data?.data?.coin;
 
@@ -39,6 +39,8 @@ const CryptoDetails = () => {
     { title: 'Total Supply', value: `$ ${cryptoDetails?.supply?.total && millify(cryptoDetails?.supply?.total)}`, icon: <ExclamationCircleOutlined /> },
     { title: 'Circulating Supply', value: `$ ${cryptoDetails?.supply?.circulating && millify(cryptoDetails?.supply?.circulating)}`, icon: <ExclamationCircleOutlined /> },
   ];
+  const coinLinks = cryptoDetails.links || [];
+  const visibleLinks = showAllLinks ? coinLinks : coinLinks.slice(0, 6);
 
   return (
     <Col className="coin-detail-container">
@@ -84,21 +86,34 @@ const CryptoDetails = () => {
           ))}
         </Col>
       </Col>
-      <Col className="coin-desc-link">
-        <Row className="coin-desc">
-          <Title level={3} className="coin-details-heading">What is {cryptoDetails.name}?</Title>
-          {HTMLReactParser(cryptoDetails.description)}
-        </Row>
-        <Col className="coin-links">
-          <Title level={3} className="coin-details-heading">{cryptoDetails.name} Links</Title>
-          {cryptoDetails.links?.map((link) => (
-            <Row className="coin-link" key={link.name}>
-              <Title level={5} className="link-name">{link.type}</Title>
-              <a href={link.url} target="_blank" rel="noreferrer">{link.name}</a>
-            </Row>
-          ))}
-        </Col>
-      </Col>
+      <section className="coin-desc-link">
+        <article className="coin-desc">
+          <Title level={3} className="coin-details-heading">About {cryptoDetails.name}</Title>
+          <div className="coin-description-content">
+            {HTMLReactParser(cryptoDetails.description)}
+          </div>
+        </article>
+        <aside className="coin-links">
+          <Title level={3} className="coin-details-heading">Official links</Title>
+          <div className="coin-links-list">
+            {visibleLinks.map((link) => (
+              <a className="coin-link" href={link.url} target="_blank" rel="noreferrer" key={link.url} title={`${link.type}: ${link.name}`}>
+                <span className="coin-link-copy">
+                  <span className="link-name">{link.type}</span>
+                  <span className="coin-link-label">{link.name}</span>
+                </span>
+                <LinkOutlined className="coin-link-icon" />
+              </a>
+            ))}
+            {!coinLinks.length && <p className="coin-links-empty">No links available.</p>}
+          </div>
+          {coinLinks.length > 6 && (
+            <Button type="link" className="coin-links-toggle" onClick={() => setShowAllLinks((visible) => !visible)}>
+              {showAllLinks ? 'Show fewer' : `Show all ${coinLinks.length} links`}
+            </Button>
+          )}
+        </aside>
+      </section>
     </Col>
   );
 };

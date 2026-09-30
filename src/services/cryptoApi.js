@@ -5,10 +5,8 @@ export const cryptoApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "https://coinranking1.p.rapidapi.com",
     prepareHeaders: (headers) => {
-      headers.set(
-        "X-RapidAPI-Key",
-        "c03b2b8081mshc3d6c7fca60178dp1f77f3jsnc6e0695beef9"
-      );
+      const rapidApiKey = process.env.REACT_APP_RAPIDAPI_KEY;
+      if (rapidApiKey) headers.set("X-RapidAPI-Key", rapidApiKey);
 
       return headers;
     },

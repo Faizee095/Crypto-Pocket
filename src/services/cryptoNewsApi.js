@@ -1,19 +1,35 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const cryptoNewsHeaders = {
-  'x-bingapis-sdk': 'true',
-  'x-rapidapi-key': "c03b2b8081mshc3d6c7fca60178dp1f77f3jsnc6e0695beef9",
-  'x-rapidapi-host': 'bing-news-search1.p.rapidapi.com',
-};
+const createRequest = (request) => {
+  const headers = { 'x-rapidapi-host': 'bing-search-apis.p.rapidapi.com' };
+  const rapidApiKey = process.env.REACT_APP_RAPIDAPI_KEY;
+  if (rapidApiKey) headers['x-rapidapi-key'] = rapidApiKey;
 
-const createRequest = (url) => ({ url, headers: cryptoNewsHeaders });
+  return { ...request, headers };
+};
 
 export const cryptoNewsApi = createApi({
   reducerPath: 'cryptoNewsApi',
-  baseQuery: fetchBaseQuery({ baseUrl:"https://bing-news-search1.p.rapidapi.com/news" }),
+  baseQuery: fetchBaseQuery({ baseUrl: 'https://bing-search-apis.p.rapidapi.com' }),
   endpoints: (builder) => ({
     getCryptoNews: builder.query({
-      query: ({ newsCategory, count }) => createRequest(`/news/search?q=${newsCategory}&safeSearch=Off&textFormat=Raw&freshness=Day&count=${count}`),
+      query: ({ newsCategory, count }) => createRequest({
+        url: '/api/rapid/news_search',
+        params: {
+          keyword: newsCategory,
+          page: 1,
+          size: count,
+        },
+      }),
+      transformResponse: (response) => ({
+        value: (response.data || []).map((article) => ({
+          name: article.title,
+          url: article.url,
+          description: article.desc || '',
+          image: article.img ? { thumbnail: { contentUrl: article.img } } : null,
+          provider: article.source ? [{ name: article.source }] : [],
+        })),
+      }),
     }),
   }),
 });

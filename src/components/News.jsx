@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import { Select, Typography, Row, Col, Avatar, Card } from 'antd';
+import { FileImageOutlined } from '@ant-design/icons';
 import moment from 'moment';
 
 import { useGetCryptoNewsQuery } from '../services/cryptoNewsApi';
+import { useGetCryptosQuery } from '../services/cryptoApi';
 import Loader from './Loader';
-
-const demoImage = 'https://www.bing.com/th?id=OVFT.mpzuVZnv8dwIMRfQGPbOPC&pid=News';
 
 const { Text, Title } = Typography;
 const { Option } = Select;
 
 const News = ({ simplified }) => {
   const [newsCategory, setNewsCategory] = useState('Cryptocurrency');
-  const { data } = useGetCryptoNewsQuery(100);
-  const { data: cryptoNews } = useGetCryptoNewsQuery({ newsCategory, count: simplified ? 6 : 12 });
+  const { data: cryptoCurrencies } = useGetCryptosQuery(100, { skip: simplified });
+  const { data: cryptoNews, isFetching, isError } = useGetCryptoNewsQuery({ newsCategory, count: simplified ? 6 : 12 });
 
-  if (!cryptoNews?.value) return <Loader />;
+  if (isFetching) return <Loader />;
+  if (isError) return <p>News could not be loaded. Please try again later.</p>;
+  if (!cryptoNews?.value) return <p>No news articles were found.</p>;
 
   return (
     <Row gutter={[24, 24]}>
@@ -29,8 +31,8 @@ const News = ({ simplified }) => {
             onChange={(value) => setNewsCategory(value)}
             filterOption={(input, option) => option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
           >
-            <Option value="Cryptocurency">Cryptocurrency</Option>
-            {data?.data?.coins?.map((currency) => <Option value={currency.name}>{currency.name}</Option>)}
+            <Option value="Cryptocurrency">Cryptocurrency</Option>
+            {cryptoCurrencies?.data?.coins?.map((currency) => <Option key={currency.uuid} value={currency.name}>{currency.name}</Option>)}
           </Select>
         </Col>
       )}
@@ -40,15 +42,25 @@ const News = ({ simplified }) => {
             <a href={news.url} target="_blank" rel="noreferrer">
               <div className="news-image-container">
                 <Title className="news-title" level={4}>{news.name}</Title>
-                <img src={news?.image?.thumbnail?.contentUrl || demoImage} alt="" />
+                <div className="news-image-frame" aria-hidden="true">
+                  <FileImageOutlined />
+                  {news?.image?.thumbnail?.contentUrl && (
+                    <img
+                      className="news-image"
+                      src={news.image.thumbnail.contentUrl}
+                      alt=""
+                      onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                    />
+                  )}
+                </div>
               </div>
-              <p>{news.description.length > 100 ? `${news.description.substring(0, 100)}...` : news.description}</p>
+              <p>{news.description?.length > 100 ? `${news.description.substring(0, 100)}...` : news.description}</p>
               <div className="provider-container">
                 <div>
-                  <Avatar src={news.provider[0]?.image?.thumbnail?.contentUrl || demoImage} alt="" />
-                  <Text className="provider-name">{news.provider[0]?.name}</Text>
+                  <Avatar>{news.provider?.[0]?.name?.charAt(0)?.toUpperCase() || '?'}</Avatar>
+                  <Text className="provider-name">{news.provider?.[0]?.name}</Text>
                 </div>
-                <Text>{moment(news.datePublished).startOf('ss').fromNow()}</Text>
+                {news.datePublished && <Text>{moment(news.datePublished).fromNow()}</Text>}
               </div>
             </a>
           </Card>
