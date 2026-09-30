@@ -16,11 +16,20 @@ const CryptoDetails = () => {
   const { coinId } = useParams();
   const [timeperiod, setTimeperiod] = useState('7d');
   const [showAllLinks, setShowAllLinks] = useState(false);
-  const { data, isFetching } = useGetCryptoDetailsQuery(coinId);
+  const { data, isFetching, isError, refetch } = useGetCryptoDetailsQuery(coinId);
   const { data: coinHistory } = useGetCryptoHistoryQuery({ coinId, timeperiod });
   const cryptoDetails = data?.data?.coin;
 
   if (isFetching) return <Loader />;
+  if (isError || !cryptoDetails) {
+    return (
+      <section className="coin-load-error">
+        <Title level={3}>Coin details are unavailable</Title>
+        <p>We couldn’t load this coin’s information. Check your connection and try again.</p>
+        <Button onClick={refetch}>Try again</Button>
+      </section>
+    );
+  }
 
   const time = ['3h', '24h', '7d', '30d', '1y', '3m', '3y', '5y'];
 
@@ -101,7 +110,7 @@ const CryptoDetails = () => {
         <article className="coin-desc">
           <Title level={3} className="coin-details-heading">About {cryptoDetails.name}</Title>
           <div className="coin-description-content">
-            {HTMLReactParser(cryptoDetails.description)}
+            {HTMLReactParser(cryptoDetails.description || '<p>Description unavailable.</p>')}
           </div>
         </article>
         <aside className="coin-links">
